@@ -17,9 +17,32 @@ limitations under the License.
 package migration
 
 import (
+	"context"
+	"errors"
+	"github.com/shumintao/yhodb/bolt"
+	"go.uber.org/zap/zaptest"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
-func Test_BucketsMigration_CreateBuckets(t *testing.T) {
+func newTestBoltStoreWithoutMigrations(t *testing.T) (*bolt.KVStore, func(), error) {
+	f, err := ioutil.TempFile("", "influxdata-bolt-")
+	if err != nil {
+		return nil, nil, errors.New("unable to open temporary boltdb file")
+	}
+	f.Close()
 
+	path := f.Name()
+	s := bolt.NewKVStore(zaptest.NewLogger(t), path, bolt.WithNoSync)
+	if err := s.Open(context.Background()); err != nil {
+		return nil, nil, err
+	}
+
+	close := func() {
+		s.Close()
+		os.Remove(path)
+	}
+
+	return s, close, nil
 }

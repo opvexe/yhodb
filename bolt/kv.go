@@ -21,7 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/shumintao/yhodb/fs"
 	"github.com/shumintao/yhodb/kv"
+	"github.com/shumintao/yhodb/kv/migration"
 	bolt "go.etcd.io/bbolt"
 	"go.uber.org/zap"
 	"io"
@@ -213,9 +215,75 @@ func (s *KVStore) Backup(ctx context.Context, w io.Writer) error {
 	})
 }
 
+// Restore replaces the underlying database with the data from r.
 func (s *KVStore) Restore(ctx context.Context, r io.Reader) error {
-	//TODO implement me
-	panic("implement me")
+	if err := func() error {
+		f, err := os.Create(s.tempPath())
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if _, err := io.Copy(f, r); err != nil {
+			return err
+		} else if err := f.Sync(); err != nil {
+			return err
+		} else if err := f.Close(); err != nil {
+			return err
+		}
+
+		// Run the migrations on the restored database prior to swapping it in.
+		if err := s.migrateRestored(ctx); err != nil {
+			return err
+		}
+
+		// Swap and reopen under lock.
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		if err := s.db.Close(); err != nil {
+			return err
+		}
+
+		// Atomically swap temporary file with current DB file.
+		if err := fs.RenameFileWithReplacement(s.tempPath(), s.path); err != nil {
+			return err
+		}
+
+		// Reopen with new database file.
+		return s.openDB()
+	}(); err != nil {
+		os.Remove(s.tempPath()) // clean up on error
+		return err
+	}
+	return nil
+}
+
+// migrateRestored opens the database at the temporary path and applies the
+// migrations to it. The database at the temporary path is closed after the
+// migrations are complete. This should be used as part of the restore
+// operation, prior to swapping the restored database with the active database.
+func (s *KVStore) migrateRestored(ctx context.Context) error {
+	restoredClient := NewClient(s.log.With(zap.String("service", "restored bolt")))
+	restoredClient.Path = s.tempPath()
+	if err := restoredClient.Open(ctx); err != nil {
+		return err
+	}
+	defer restoredClient.Close()
+
+	restoredKV := NewKVStore(s.log.With(zap.String("service", "restored kvstore-bolt")), s.tempPath())
+	restoredKV.WithDB(restoredClient.DB())
+	migrator, err := migration.NewMigrator(
+		s.log.With(zap.String("service", "bolt restore migrations")),
+		restoredKV,
+		//all.Migrations[:]..., // TODO don't konw
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return migrator.Up(ctx)
 }
 
 // Tx is a light wrapper around a boltdb transaction. It implements kv.Tx.
