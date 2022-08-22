@@ -18,7 +18,7 @@ package migration
 
 import (
 	"context"
-	"yho.io/db/kv"
+	"github.com/shumintao/yhodb/kv"
 )
 
 type bucketMigrationType string
@@ -76,7 +76,7 @@ func (m BucketsMigration) Up(ctx context.Context, store kv.SchemaStore) error {
 	return nil
 }
 
-// Down delets the buckets on the store.
+// Down deletes the buckets on the store.
 func (m BucketsMigration) Down(ctx context.Context, store kv.SchemaStore) error {
 	var fn func(context.Context, []byte) error
 	switch m.typ {

@@ -2,9 +2,9 @@ package fs
 
 import (
 	"fmt"
+	"github.com/shumintao/yhodb/errors"
 	"io"
 	"os"
-	"yho.io/db/errors"
 )
 
 // A FileExistsError is returned when an operation cannot be completed due to a

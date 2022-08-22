@@ -38,3 +38,7 @@ func NewTestKVStore(t *testing.T) *KVStore {
 	defer os.Remove(path)
 	return s
 }
+
+func Test_New(t *testing.T) {
+	NewTestKVStore(t)
+}

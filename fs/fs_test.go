@@ -1,11 +1,11 @@
 package fs_test
 
 import (
+	"github.com/shumintao/yhodb/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
-	"yho.io/db/fs"
 )
 
 func TestRenameFileWithReplacement(t *testing.T) {

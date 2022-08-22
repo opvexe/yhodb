@@ -189,7 +189,7 @@ type CursorDirection int
 const (
 	// CursorAscending directs a cursor to range in ascending order
 	CursorAscending CursorDirection = iota
-	// CursorAscending directs a cursor to range in descending order
+	// CursorDescending directs a cursor to range in descending order
 	CursorDescending
 )
 

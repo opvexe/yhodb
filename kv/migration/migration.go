@@ -20,11 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/shumintao/yhodb/kv"
+	"github.com/shumintao/yhodb/platform"
 	"go.uber.org/zap"
 	"os"
 	"time"
-	"yho.io/db/kv"
-	"yho.io/db/platform"
 )
 
 var migrationBucket = []byte("migrationsv1")

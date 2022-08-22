@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/shumintao/yhodb/kv"
 	bolt "go.etcd.io/bbolt"
 	"go.uber.org/zap"
 	"io"
@@ -28,7 +29,6 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-	"yho.io/db/kv"
 )
 
 // check that *KVStore implement kv.SchemaStore interface.
